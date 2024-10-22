@@ -1,0 +1,6 @@
+# Ignore object directories
+obj
+
+
+# Ignore executables
+os
