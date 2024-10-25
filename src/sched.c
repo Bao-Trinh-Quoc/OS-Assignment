@@ -8,6 +8,9 @@
 static struct queue_t ready_queue;
 static struct queue_t run_queue;
 static pthread_mutex_t queue_lock;
+/* Bao's variables*/
+static int curr_prio = 0;
+static int slot_left = MAX_PRIO;
 
 #ifdef MLQ_SCHED
 static struct queue_t mlq_ready_queue[MAX_PRIO];
@@ -47,6 +50,25 @@ struct pcb_t * get_mlq_proc(void) {
 	/*TODO: get a process from PRIORITY [ready_queue].
 	 * Remember to use lock to protect the queue.
 	 * */
+	pthread_mutex_lock(&queue_lock);
+	if (slot_left == 0 || empty(&mlq_ready_queue[curr_prio])) {
+		curr_prio = 0;
+		slot_left = MAX_PRIO - curr_prio;
+	}
+	for (int i = 0; i < MAX_PRIO; i++)
+	{
+		if (slot_left == 0 || empty(&mlq_ready_queue[curr_prio])) {
+			curr_prio = (curr_prio + 1) % MAX_PRIO;
+			slot_left = MAX_PRIO - curr_prio;
+		}
+		else
+		{
+			proc = dequeue(&mlq_ready_queue[curr_prio]);
+			slot_left--;
+			break;
+		}
+	}
+	pthread_mutex_unlock(&queue_lock);
 	return proc;	
 }
 
@@ -79,6 +101,25 @@ struct pcb_t * get_proc(void) {
 	/*TODO: get a process from [ready_queue].
 	 * Remember to use lock to protect the queue.
 	 * */
+		pthread_mutex_lock(&queue_lock);
+	if (slot_left == 0 || empty(&mlq_ready_queue[curr_prio])) {
+		curr_prio = 0;
+		slot_left = MAX_PRIO - curr_prio;
+	}
+	for (int i = 0; i < MAX_PRIO; i++)
+	{
+		if (slot_left == 0 || empty(&mlq_ready_queue[curr_prio])) {
+			curr_prio = (curr_prio + 1) % MAX_PRIO;
+			slot_left = MAX_PRIO - curr_prio;
+		}
+		else
+		{
+			proc = dequeue(&mlq_ready_queue[curr_prio]);
+			slot_left--;
+			break;
+		}
+	}
+	pthread_mutex_unlock(&queue_lock);
 	return proc;
 }
 

@@ -33,7 +33,7 @@ struct pcb_t * dequeue(struct queue_t * q) {
         // Shift all processes to the left
         for (int i = 0; i < q->size - 1; i++)
         {
-                q->proc[i] = q->proc[i+1]
+                q->proc[i] = q->proc[i+1];
         }
         // Assign NULL to the tail of the queue
         q->proc[q->size - 1] = NULL;
