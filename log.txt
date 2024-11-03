@@ -4,3 +4,6 @@ Init project
 25/10/2024
 Add code for queue and dequeue in queue.c 
 Add code for mlq in sched.c
+
+3/11/2024
+test code for scheduler --- different from the testcase --- interesting.
