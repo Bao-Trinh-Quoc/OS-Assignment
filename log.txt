@@ -7,3 +7,10 @@ Add code for mlq in sched.c
 
 3/11/2024
 test code for scheduler --- different from the testcase --- interesting.
+
+5/11/2024
+update code in os-config --- seems like the bug in the scheduler is fixed.
+now trying to understand the output of the scheduler.
+
+7/11/2024
+Understood the output of scheduler
