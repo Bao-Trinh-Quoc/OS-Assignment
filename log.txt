@@ -14,3 +14,7 @@ now trying to understand the output of the scheduler.
 
 7/11/2024
 Understood the output of scheduler
+
+14/11/2024
+Implement MEMPHY_dump in mm-memphy.c
+Implement _alloc in mm-memphy.c (this is so hard omg)
