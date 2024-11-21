@@ -18,3 +18,6 @@ Understood the output of scheduler
 14/11/2024
 Implement MEMPHY_dump in mm-memphy.c
 Implement _alloc in mm-memphy.c (this is so hard omg)
+
+21/11/2024
+The code needed to be Implemented in mm-vm.c and mm.c 
