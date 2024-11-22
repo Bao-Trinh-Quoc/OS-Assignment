@@ -21,3 +21,6 @@ Implement _alloc in mm-memphy.c (this is so hard omg)
 
 21/11/2024
 The code needed to be Implemented in mm-vm.c and mm.c 
+
+22/11/2024
+added code for __free in mm-vm.c
