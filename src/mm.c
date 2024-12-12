@@ -92,20 +92,36 @@ int vmap_page_range(struct pcb_t *caller, // process call
   int pgn = PAGING_PGN(addr);
 
   /* TODO: update the rg_end and rg_start of ret_rg 
-  //ret_rg->rg_end =  ....
+  // ret_rg->rg_end =  ....
   //ret_rg->rg_start = ...
   //ret_rg->vmaid = ...
   */
+  ret_rg->rg_start = addr;
+  ret_rg->rg_end = ret_rg->rg_start + pgnum * PAGING_PAGESZ;
+  ret_rg->vmaid = 0;
 
   fpit->fp_next = frames;
 
   /* TODO map range of frame to address space 
    *      in page table pgd in caller->mm
    */
+  while (pgit < pgnum)
+  {
+    fpit = frames; // Set the temporary frame pointer to the current frame in the list.
+    // Set the page frame number in the page table entry for the current virtual page.
+    pte_set_fpn(&caller->mm->pgd[pgn + pgit], fpit->fpn);
+    frames = frames->fp_next; // Move to the next frame in the list.
+    free(fpit);               // Free the temporary frame structure.
+    // Enqueue the page number in the page replacement tracking list.
+    // This helps keep track of page usage for later replacement if necessary.
+    enlist_pgn_node(&caller->mm->fifo_pgn, pgn + pgit);
+    pgit++; // Increment the page index.
+  }
+
 
    /* Tracking for later page replacement activities (if needed)
     * Enqueue new usage page */
-   enlist_pgn_node(&caller->mm->fifo_pgn, pgn+pgit);
+  //  enlist_pgn_node(&caller->mm->fifo_pgn, pgn+pgit);
 
 
   return 0;
@@ -121,21 +137,49 @@ int vmap_page_range(struct pcb_t *caller, // process call
 int alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_struct** frm_lst)
 {
   int pgit, fpn;
-  //struct framephy_struct *newfp_str;
+  struct framephy_struct *newfp_str;
 
 
   /* TODO: allocate the page 
   //caller-> ...
   //frm_lst-> ...
   */
+
   for(pgit = 0; pgit < req_pgnum; pgit++)
   {
+    newfp_str = (struct framephy_struct *)malloc(sizeof(struct framephy_struct));
     if(MEMPHY_get_freefp(caller->mram, &fpn) == 0)
-   {
-     
-   } else {  // ERROR CODE of obtaining somes but not enough frames
-   } 
- }
+    {
+      newfp_str->fpn = fpn;
+    } 
+    else {  // ERROR CODE of obtaining somes but not enough frames
+      int victim_page, swpfpn; // Declare victim page number and swap frame page number
+      // Find a victim page and a free frame in the swap area
+      if (find_victim_page(caller->mm, &victim_page) == -1 || MEMPHY_get_freefp(caller->active_mswp, &swpfpn) == -1)
+      {
+        // Cleanup already allocated frames if no victim page found or no swap space available
+        if (*frm_lst == NULL) return -1; // No frames allocated at all, return -1.
+        struct framephy_struct *freefp_str;
+        // Free all previously allocated frame structures
+        while (*frm_lst != NULL)
+        {
+          freefp_str = *frm_lst;
+          *frm_lst = (*frm_lst)->fp_next;
+          free(freefp_str);
+        }
+        return -3000;
+      }
+      // Perform the actual page swap
+      uint32_t vicpte = caller->mm->pgd[victim_page];
+      int vicfpn = PAGING_FPN(vicpte);
+      __swap_cp_page(caller->mram, vicfpn, caller->active_mswp, swpfpn);
+      pte_set_swap(&caller->mm->pgd[victim_page], 0, swpfpn);
+      newfp_str->fpn = vicfpn; // Reuse the frame of the victim page
+      }
+      // Link the new frame structure into the frame list
+      newfp_str->fp_next = *frm_lst;
+      *frm_lst = newfp_str;  
+    }
 
   return 0;
 }
@@ -229,6 +273,7 @@ int init_mm(struct mm_struct *mm, struct pcb_t *caller)
 
   /* TODO update VMA0 next */
   // vma0->next = ...
+  vma0->vm_next = vma1;
 
   /* TODO: update one vma for HEAP */
   // vma1->vm_id = ...
@@ -238,6 +283,13 @@ int init_mm(struct mm_struct *mm, struct pcb_t *caller)
   // enlist_vm_rg_node(&vma1...)
   // vma1->vm_next
   // enlist_vm_rg_node(&vma1->vm_freerg_list,...)
+  vma1->vm_id = 1;
+  vma1->vm_start = HEAP_START; // Define HEAP_START as per your memory layout
+  vma1->vm_end = vma1->vm_start;
+  vma1->sbrk = vma1->vm_start;
+  struct vm_rg_struct *heap_rg = init_vm_rg(vma1->vm_start, vma1->vm_end, 0);
+  enlist_vm_rg_node(&vma1->vm_freerg_list, heap_rg);
+  vma1->vm_next = NULL;
 
   /* Point vma owner backward */
   vma0->vm_mm = mm; 
@@ -245,7 +297,8 @@ int init_mm(struct mm_struct *mm, struct pcb_t *caller)
 
   /* TODO: update mmap */
   //mm->mmap = ...
-
+  mm->mmap = vma0;
+  
   return 0;
 }
 

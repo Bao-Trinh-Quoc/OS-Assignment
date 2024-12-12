@@ -24,3 +24,13 @@ The code needed to be Implemented in mm-vm.c and mm.c
 
 22/11/2024
 added code for __free in mm-vm.c
+
+8/12/2024
+the code needed to be in mm.h too
+implement pg_getpage in mm-vm.c
+Implemented all in mm-vm.c
+stopped in mm.c 
+
+9/12/2024
+?? Done ?? :) 
+could build sucessfully but haven't tested yet.
